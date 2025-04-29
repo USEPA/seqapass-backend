@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans:beans xmlns="http://www.springframework.org/schema/security"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:beans="http://www.springframework.org/schema/beans"
+	xmlns:sec="http://www.springframework.org/schema/security"
+	xsi:schemaLocation="
+      http://www.springframework.org/schema/security
+      http://www.springframework.org/schema/security/spring-security.xsd
+      http://www.springframework.org/schema/beans
+      http://www.springframework.org/schema/beans/spring-beans.xsd">
+      
+      
+    <beans:bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean">
+		<beans:property name="jndiName" value="java:comp/env/jdbc/preferred" />
+	</beans:bean>
+
+	<http use-expressions="true" entry-point-ref="restAuthenticationEntryPoint">
+		<intercept-url pattern="/protected/**" access="isAuthenticated()" />
+		<intercept-url pattern="/admin/**" access="hasRole('ROLE_ADMIN')" />
+
+		<sec:form-login authentication-success-handler-ref="mySuccessHandler"
+			authentication-failure-handler-ref="myFailureHandler" />
+
+		<logout />
+		<csrf disabled="true" />
+	</http>
+
+	<beans:bean id="mySuccessHandler"
+		class="gov.epa.seqapass.backend.security.MySavedRequestAwareAuthenticationSuccessHandler" />
+<!-- 
+  	<beans:bean id="mySuccessHandler" 
+  		class="org.springframework.security.web.authentication.SimpleUrlAuthenticationSuccessHandler" />   
+ -->
+ 
+	<beans:bean id="myFailureHandler"
+		class="org.springframework.security.web.authentication.SimpleUrlAuthenticationFailureHandler" />
+
+	<authentication-manager alias="authenticationManager">
+		<authentication-provider>
+		<!-- 
+			<user-service>
+				<user name="admin" password="admin" authorities="ROLE_ADMIN" />
+				<user name="user" password="user" authorities="ROLE_USER" />
+			</user-service>
+		 -->
+		 <password-encoder hash="bcrypt" />
+		 <jdbc-user-service data-source-ref="dataSource"
+		 	users-by-username-query="
+		 	  SELECT email AS USERNAME, password, CASE enabledBE WHEN 'Y' THEN 'true' ELSE 'false' END FROM `user` WHERE email=?;"
+		 	authorities-by-username-query="
+		 	  SELECT email AS USERNAME, CASE is_admin WHEN 1 THEN 'ROLE_ADMIN' ELSE 'ROLE_USER' END AS ROLENAME 
+		 	  FROM `user`
+		 	  WHERE email=?;"	
+		 />
+
+		</authentication-provider>
+	</authentication-manager>
+
+</beans:beans>

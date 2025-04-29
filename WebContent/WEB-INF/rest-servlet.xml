@@ -1,0 +1,241 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:context="http://www.springframework.org/schema/context" xmlns:tx="http://www.springframework.org/schema/tx"
+	xmlns:mvc="http://www.springframework.org/schema/mvc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xsi:schemaLocation="
+        http://www.springframework.org/schema/beans     
+        http://www.springframework.org/schema/beans/spring-beans-4.2.xsd
+        http://www.springframework.org/schema/context
+        http://www.springframework.org/schema/context/spring-context-4.2.xsd
+        http://www.springframework.org/schema/mvc
+        http://www.springframework.org/schema/mvc/spring-mvc-4.2.xsd
+        http://www.springframework.org/schema/tx 
+        http://www.springframework.org/schema/tx/spring-tx-4.2.xsd">
+	<context:component-scan base-package="gov.epa.seqapass.backend.controller" />
+
+	<mvc:resources mapping="/static/**" location="WEB-INF/static/" />
+	<mvc:default-servlet-handler />
+	<mvc:annotation-driven />
+
+	<!-- Enable Annotation based Declarative Transaction Management -->
+	<tx:annotation-driven proxy-target-class="true"
+		transaction-manager="transactionManager" />
+
+	<!-- Creating TransactionManager Bean, since JDBC we are creating of type 
+		DataSourceTransactionManager -->
+	<bean id="transactionManager"
+		class="org.springframework.jdbc.datasource.DataSourceTransactionManager">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+
+
+	<!-- dataSources -->
+	<!-- <bean id="dataSource" class="org.springframework.jndi.JndiObjectFactoryBean"> 
+		<property name="jndiName" value="java:comp/env/jdbc/preferred" /> </bean> -->
+
+	<!-- templates -->
+	<bean class="org.springframework.jdbc.core.JdbcTemplate" id="jdbcTemplate">
+		<property name="dataSource" ref="dataSource" />
+	</bean>
+
+	<!-- services -->
+	<bean id="processTypeKeeper"
+		class="gov.epa.seqapass.backend.externalProcess.ProcessTypeKeeper">
+	</bean>
+	<bean id="ncbiKeeper" class="gov.epa.seqapass.backend.domain.NCBIKeeper">
+		<constructor-arg ref="jdbcTemplate" />
+		<constructor-arg ref="backEndProvider" />
+	</bean>
+	<bean id="backEndProvider" class = "gov.epa.seqapass.backend.domain.BackEndProvider">
+	</bean>    
+
+	<bean id="analysisService" class="gov.epa.seqapass.backend.dao.AnalysisServiceImpl">
+		<constructor-arg ref="jdbcTemplate" />
+		<constructor-arg ref="ncbiKeeper" />
+		<constructor-arg ref="blastTools" />
+		<constructor-arg ref="threadPoolMonitorService" />
+	<!-- 	<constructor-arg ref="rService" /> -->
+	</bean>
+	<bean id="proteinService" class="gov.epa.seqapass.backend.dao.ProteinServiceImpl">
+		<constructor-arg ref="jdbcTemplate" />
+		<constructor-arg ref="ncbiKeeper" />
+	</bean>
+	<bean id="hpcService" class="gov.epa.seqapass.backend.dao.HPCServiceImpl">
+		<constructor-arg ref="jdbcTemplate" />
+	</bean>
+	<bean id="userService" class="gov.epa.seqapass.backend.dao.UserServiceImpl">
+		<constructor-arg ref="jdbcTemplate" />
+		<constructor-arg ref="ncbiKeeper" />
+		<constructor-arg ref="backEndProvider" />
+	</bean>
+	<bean id="speciesService" class="gov.epa.seqapass.backend.dao.SpeciesServiceImpl">
+		<constructor-arg ref="jdbcTemplate" />
+	</bean>
+	<bean id="threadPoolMonitorService"
+		class="gov.epa.seqapass.backend.dao.ThreadPoolMonitorServiceImpl">
+		<constructor-arg index="0" ref="levelOneTaskExecutor" />
+		<constructor-arg index="1" ref="rbhTaskExecutor" />
+		<constructor-arg index="2" ref="rpsTaskExecutor" />
+		<constructor-arg index="3" ref="levelTwoTaskExecutor" />
+		<constructor-arg index="4" ref="levelThreeTaskExecutor" />
+		<constructor-arg index="5" ref="levelOneToxcastTaskExecutor" />
+		<constructor-arg index="6" ref="levelTwoToxcastTaskExecutor" />
+		<constructor-arg index="7" ref="levelFourFastaTaskExecutor" />
+		<constructor-arg index="8" ref="levelFourItasserTaskExecutor" />
+		<constructor-arg index="9" ref="levelFourTMAlignTaskExecutor" />
+	</bean>
+	<bean id="reportService" class="gov.epa.seqapass.backend.dao.ReportServiceImpl">
+		<constructor-arg ref="jdbcTemplate" />
+		<!-- <constructor-arg ref="rService" /> -->
+		<constructor-arg ref="ncbiKeeper" />
+		<constructor-arg ref="backEndProvider" />
+	</bean>
+	<bean id="jsService" class="gov.epa.seqapass.backend.dao.JavaScriptServiceImpl">
+		<constructor-arg ref="jdbcTemplate" />
+	</bean>
+	<!-- <bean id="rService" class="gov.epa.seqapass.backend.dao.RService">
+	</bean> -->
+	<bean id="blastTools" class="gov.epa.seqapass.backend.serviceThread.BLASTTools">
+		<constructor-arg ref="jdbcTemplate" />
+		<constructor-arg ref="ncbiKeeper" />
+		<constructor-arg ref="blastTools2" />
+	</bean>
+	<bean id="blastTools2" class="gov.epa.seqapass.backend.serviceThread.BLASTTools2">
+		<constructor-arg ref="jdbcTemplate" />
+		<constructor-arg ref="reportService" />
+	</bean>
+
+	<!-- controller -->
+	<bean id="proteinServiceController"
+		class="gov.epa.seqapass.backend.controller.ProteinServiceController">
+		<constructor-arg ref="proteinService" />
+	</bean>
+	<bean id="userServiceController"
+		class="gov.epa.seqapass.backend.controller.UserServiceController">
+		<constructor-arg ref="userService" />
+	</bean>
+	<bean id="speciesServiceController"
+		class="gov.epa.seqapass.backend.controller.SpeciesServiceController">
+		<constructor-arg ref="speciesService" />
+	</bean>
+	<bean id="analysisServiceController"
+		class="gov.epa.seqapass.backend.controller.AnalysisServiceController">
+		<constructor-arg ref="analysisService" />
+	</bean>
+	<bean id="threadPoolMonitorServiceController"
+		class="gov.epa.seqapass.backend.controller.ThreadPoolMonitorServiceController">
+		<constructor-arg ref="threadPoolMonitorService" />
+	</bean>
+	<bean id="reportServiceController"
+		class="gov.epa.seqapass.backend.controller.ReportServiceController">
+		<constructor-arg ref="reportService" />
+	</bean>
+	<bean id="javaScriptServiceController"
+		class="gov.epa.seqapass.backend.controller.JavaScriptServiceController">
+		<constructor-arg ref="jsService" />
+	</bean>
+	<bean id="adminController" class="gov.epa.seqapass.backend.controller.AdminController">
+		<constructor-arg ref="userService" />
+		<constructor-arg ref="reportService" />
+		<constructor-arg ref="analysisService" />
+	</bean>
+	<!-- 
+	<bean id="blastController" class="gov.epa.seqapass.backend.controller.BlastController">
+		<constructor-arg ref="backEndProvider" />
+	</bean>
+	<bean id="listUsersController" class="gov.epa.seqapass.backend.controller.ListUsersController">
+		<constructor-arg ref="backEndProvider" />
+	</bean>
+	<bean id="listProteinsController" class="gov.epa.seqapass.backend.controller.ListProteinsController">
+		<constructor-arg ref="backEndProvider" />
+	</bean>
+	<bean id="threadPoolMonitorController" class="gov.epa.seqapass.backend.controller.ThreadPoolMonitorController">
+		<constructor-arg ref="backEndProvider" />
+	</bean>
+		 -->
+	
+	<bean id="webController"
+		class="gov.epa.seqapass.backend.controller.WebController">
+		<constructor-arg ref="reportService" />
+		<constructor-arg ref="userService" />
+		<constructor-arg ref="hpcService" />
+	</bean>
+
+
+	<bean id="viewResolver"
+		class="org.springframework.web.servlet.view.InternalResourceViewResolver">
+		<property name="viewClass"
+			value="org.springframework.web.servlet.view.JstlView" />
+		<property name="prefix" value="/WEB-INF/jsp/" />
+		<property name="suffix" value=".jsp" />
+	</bean>
+
+	<bean id="levelOneTaskExecutor"
+		class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+		<property name="corePoolSize" value="3" />
+		<property name="maxPoolSize" value="3" />
+		<property name="queueCapacity" value="1500" />
+	</bean>
+
+	<bean id="rbhTaskExecutor"
+		class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+		<property name="corePoolSize" value="10" />
+		<property name="maxPoolSize" value="10" />
+		<property name="queueCapacity" value="1500" />
+	</bean>
+
+	<bean id="rpsTaskExecutor"
+		class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+		<property name="corePoolSize" value="15" />
+		<property name="maxPoolSize" value="15" />
+		<property name="queueCapacity" value="1500" />
+	</bean>
+
+	<bean id="levelTwoTaskExecutor"
+		class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+		<property name="corePoolSize" value="8" />
+		<property name="maxPoolSize" value="8" />
+		<property name="queueCapacity" value="1500" />
+	</bean>
+
+	<bean id="levelThreeTaskExecutor"
+		class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+		<property name="corePoolSize" value="8" />
+		<property name="maxPoolSize" value="8" />
+		<property name="queueCapacity" value="1500" />
+	</bean>
+	
+	<bean id="levelOneToxcastTaskExecutor"
+		class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+		<property name="corePoolSize" value="2" />
+		<property name="maxPoolSize" value="2" />
+		<property name="queueCapacity" value="1500" />
+	</bean>
+	<bean id="levelTwoToxcastTaskExecutor"
+		class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+		<property name="corePoolSize" value="2" />
+		<property name="maxPoolSize" value="2" />
+		<property name="queueCapacity" value="1500" />
+	</bean>
+	<bean id="levelFourFastaTaskExecutor"
+		class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+		<property name="corePoolSize" value="8" />
+		<property name="maxPoolSize" value="8" />
+		<property name="queueCapacity" value="1500" />
+	</bean>
+	<bean id="levelFourItasserTaskExecutor"
+		class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+		<property name="corePoolSize" value="2" />
+		<property name="maxPoolSize" value="2" />
+		<property name="queueCapacity" value="1500" />
+	</bean>
+	<bean id="levelFourTMAlignTaskExecutor"
+		class="org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor">
+		<property name="corePoolSize" value="8" />
+		<property name="maxPoolSize" value="8" />
+		<property name="queueCapacity" value="1500" />
+	</bean>
+
+</beans>

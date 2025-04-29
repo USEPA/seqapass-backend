@@ -1,0 +1,20 @@
+# Some files are important, but are customized for each user.  These should be in the repo, but the changes people make should not be staged and committed.  To keep your local (different) copy unstaged without having to see and ignore it all the time, Use the following.  Doing a pull should not change it, and it will stay unstaged (but possibly different). 
+
+git update-index --assume-unchanged .classpath
+------------------------------------------------------------------------------------------------------------------------
+# To ensure that filemode (permissions) do not show up as differences in files in git, execute this config line:
+
+git config --global core.filemode false
+------------------------------------------------------------------------------------------------------------------------
+# To set your username and password for commits:
+
+git config --global user.name "Tom Transue"
+git config --global user.email "transue.tom@epa.gov"
+------------------------------------------------------------------------------------------------------------------------
+# To ensure that a change of line endings (Windows CR+LF vs. Linux CR) do not show up as differences in files in git, execute this config line:
+
+git config --global core.autocrlf true
+
+# Note that a commit will show this:
+  warning: LF will be replaced by CRLF in Notes/git_suggestions.txt.
+  The file will have its original line endings in your working directory
